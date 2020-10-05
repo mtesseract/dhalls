@@ -1,5 +1,4 @@
 {-# LANGUAGE RecordWildCards #-}
-{-# LANGUAGE TemplateHaskell #-}
 
 module Main where
 
@@ -11,10 +10,10 @@ import Katip
 import qualified Server
 import System.IO (stdout)
 
-app :: Config -> App ()
-app config@Config {..} = do
+app :: LogItem c => LogEnv -> c -> Namespace -> Config -> App ()
+app logEnv c namespace config@Config {..} = do
   $(logTM) InfoS $ "Started with config: " <> show config
-  Server.run listenPort
+  Server.run logEnv c namespace listenPort
 
 main :: IO ()
 main = do
@@ -26,4 +25,4 @@ main = do
     runKatipContextT le initialContext initialNamespace $ do
       Config.retrieve >>= \case
         Left err -> $(logTM) ErrorS $ "Failed to retrieve config: " <> show err <> "; exiting."
-        Right config -> app config
+        Right config -> app le initialContext initialNamespace config

@@ -19,7 +19,13 @@ import Dhall.JSON (dhallToJSON)
 import Network.Wai
 import qualified Network.Wai.Handler.Warp
 import Servant.API
-import Servant.Server (Handler, serve)
+import Servant.Server (Handler, serve, ServerT, hoistServer, err400, ServerError(..))
+import Katip
+import Control.Exception.Safe (tryAny)
+import Servant (throwError)
+import Data.Function ((&))
+
+type AppHandler = KatipContextT Handler
 
 data DhallRequest = DhallRequest
   { reqBody :: Text
@@ -42,18 +48,34 @@ type DhallAPI = "dhall" :> "normalize" :> ReqBody '[JSON] DhallRequest :> Get '[
 dhallApi :: Proxy DhallAPI
 dhallApi = Proxy
 
-dhallNormalizeGet :: DhallRequest -> Handler DhallResponse
+dhallNormalizeGet :: DhallRequest -> AppHandler DhallResponse
 dhallNormalizeGet DhallRequest {..} = do
-  expr <- liftIO $ Dhall.inputExpr reqBody
-  case dhallToJSON expr of
-    Left err -> undefined
-    Right res -> pure DhallResponse {rspBody = res}
+  expr <- liftIO (tryAny (Dhall.inputExpr reqBody)) >>= \case
+    Left exn -> throwError err400 { errBody = "Invalid Dhall: " <> show exn}
+    Right ok -> pure ok
+
+  json <- dhallToJSON expr & \case
+    Left err -> do
+      $(logTM) ErrorS $ "Failed to convert Dhall to JSON: " <> show err
+      throwError $ err400 { errBody = "Cannot convert Dhall to JSON" }
+    Right ok -> pure ok
+
+  pure $ DhallResponse {rspBody = json}
+
+server :: ServerT DhallAPI AppHandler
+server = dhallNormalizeGet
+
+nt :: LogItem c => LogEnv -> c -> Namespace -> AppHandler a -> Handler a
+nt logEnv c namespace = runKatipContextT logEnv c namespace 
+
+app :: LogItem c => LogEnv -> c -> Namespace -> Application
+app logEnv c namespace = serve dhallApi $ hoistServer dhallApi (nt logEnv c namespace) server
 
 -- 'serve' comes from servant and hands you a WAI Application,
 -- which you can think of as an "abstract" web application,
 -- not yet a webserver.
-server :: Application
-server = serve dhallApi dhallNormalizeGet
+-- server :: Application
+-- server = serve dhallApi dhallNormalizeGet
 
-run :: MonadIO m => Int -> m ()
-run port = liftIO $ Network.Wai.Handler.Warp.run port server
+run :: MonadIO m => LogItem c => LogEnv -> c -> Namespace -> Int -> m ()
+run logEnv c namespace port = liftIO $ Network.Wai.Handler.Warp.run port (app logEnv c namespace)
