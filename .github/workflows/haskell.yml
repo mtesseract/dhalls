@@ -50,4 +50,4 @@ jobs:
           name: mtesseract/dhalls
           username: mtesseract
           password: ${{ secrets.DOCKER_ACCESS_TOKEN }}
-          tags: "latest,${{ env.RELEASE_VERSION }}"
+          tags: "latest"
