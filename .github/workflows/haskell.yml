@@ -12,6 +12,9 @@ jobs:
 
     steps:
       - uses: actions/checkout@v2
+      - name: Get release version
+        id: get_version
+        run: echo ::set-env name=RELEASE_VERSION::$(echo ${GITHUB_REF:10})
       - uses: actions/setup-haskell@v1
         with:
           ghc-version: "8.8.2"
@@ -47,3 +50,4 @@ jobs:
           name: mtesseract/dhalls
           username: mtesseract
           password: ${{ secrets.DOCKER_ACCESS_TOKEN }}
+          tags: "latest,${{ env.RELEASE_VERSION }}"
