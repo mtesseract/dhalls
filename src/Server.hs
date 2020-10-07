@@ -71,11 +71,5 @@ nt logEnv c namespace = runKatipContextT logEnv c namespace
 app :: LogItem c => LogEnv -> c -> Namespace -> Application
 app logEnv c namespace = serve dhallApi $ hoistServer dhallApi (nt logEnv c namespace) server
 
--- 'serve' comes from servant and hands you a WAI Application,
--- which you can think of as an "abstract" web application,
--- not yet a webserver.
--- server :: Application
--- server = serve dhallApi dhallNormalizeGet
-
 run :: MonadIO m => LogItem c => LogEnv -> c -> Namespace -> Int -> m ()
 run logEnv c namespace port = liftIO $ Network.Wai.Handler.Warp.run port (app logEnv c namespace)

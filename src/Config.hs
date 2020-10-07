@@ -7,7 +7,7 @@ defaultListenAddress :: Text
 defaultListenAddress = "localhost"
 
 defaultListenPort :: Int
-defaultListenPort = 8081
+defaultListenPort = 8080
 
 data Config = Config
   { listenAddress :: Text,
