@@ -44,10 +44,18 @@ jobs:
         run: |
           mkdir artifacts
           cabal install --installdir=artifacts/ --install-method=copy --overwrite-policy=always
-      - name: Publish Docker
+      - name: Publish to DockerHub
         uses: elgohr/Publish-Docker-Github-Action@2.22
         with:
           name: mtesseract/dhalls
           username: mtesseract
           password: ${{ secrets.DOCKER_ACCESS_TOKEN }}
+          tags: "latest"
+      - name: Publish to Silverratio
+        uses: elgohr/Publish-Docker-Github-Action@2.22
+        with:
+          registry: registry.k8s.silverratio.net
+          name: dhalls
+          username: admin
+          password: ${{ secrets.DOCKER_REGISTRY_SILVERRATIO_PASSWORD }}
           tags: "latest"

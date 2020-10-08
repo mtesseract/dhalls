@@ -43,7 +43,7 @@ instance FromJSON DhallRequest where
 instance ToJSON DhallResponse where
   toJSON = genericToJSON $ aesonPrefix snakeCase
 
-type DhallAPI = "dhall" :> "normalize" :> ReqBody '[JSON] DhallRequest :> Get '[JSON] DhallResponse
+type DhallAPI = "dhall" :> "normalize" :> ReqBody '[JSON] DhallRequest :> Post '[JSON] DhallResponse
 
 dhallApi :: Proxy DhallAPI
 dhallApi = Proxy
