@@ -28,6 +28,7 @@ executable dhalls
                      , servant >= 0.18
                      , servant-server
                      , wai
+                     , wai-cors >= 0.2.7
                      , warp
                      , aeson
                      , aeson-casing >= 0.2.0.0

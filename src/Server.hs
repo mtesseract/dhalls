@@ -17,6 +17,7 @@ import Data.Aeson.Casing
 import qualified Dhall
 import Dhall.JSON (dhallToJSON)
 import Network.Wai
+import Network.Wai.Middleware.Cors (cors, simpleCorsResourcePolicy, CorsResourcePolicy(..))
 import qualified Network.Wai.Handler.Warp
 import Servant.API
 import Servant.Server (Handler, serve, ServerT, hoistServer, err400, ServerError(..))
@@ -69,7 +70,10 @@ nt :: LogItem c => LogEnv -> c -> Namespace -> AppHandler a -> Handler a
 nt logEnv c namespace = runKatipContextT logEnv c namespace 
 
 app :: LogItem c => LogEnv -> c -> Namespace -> Application
-app logEnv c namespace = serve dhallApi $ hoistServer dhallApi (nt logEnv c namespace) server
+app logEnv c namespace = enableCors $ serve dhallApi $ hoistServer dhallApi (nt logEnv c namespace) server
+  where
+    enableCors = cors . const . Just $ corsPolicy
+    corsPolicy = simpleCorsResourcePolicy  { corsRequestHeaders = ["Content-Type"] }
 
 run :: MonadIO m => LogItem c => LogEnv -> c -> Namespace -> Int -> m ()
 run logEnv c namespace port = liftIO $ Network.Wai.Handler.Warp.run port (app logEnv c namespace)
